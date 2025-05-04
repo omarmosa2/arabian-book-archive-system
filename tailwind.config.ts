@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -52,6 +53,21 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				gold: {
+					DEFAULT: '#D4AF37',
+					light: '#F4CF67',
+					dark: '#B4901F'
+				},
+				navy: {
+					DEFAULT: '#1F3A5F',
+					light: '#2D5A8E',
+					dark: '#132339'
+				},
+				sand: {
+					DEFAULT: '#E5D3B3',
+					light: '#F5E8D3',
+					dark: '#C5B393'
+				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
@@ -89,6 +105,13 @@ export default {
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out'
+			},
+			fontFamily: {
+				amiri: ['Amiri', 'serif'],
+				cairo: ['Cairo', 'sans-serif'],
+			},
+			backgroundImage: {
+				'pattern': "url('/patterns/arabesque.svg')"
 			}
 		}
 	},
