@@ -17,17 +17,64 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { 
+  Form, 
+  FormControl, 
+  FormField, 
+  FormItem, 
+  FormLabel, 
+  FormMessage 
+} from "@/components/ui/form";
 import { Link } from 'react-router-dom';
 import { Search, BookOpen, Plus } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
-import { books } from '@/data/mockData';
+import { books as initialBooks } from '@/data/mockData';
+import { useToast } from "@/hooks/use-toast";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+// تعريف نموذج التحقق للكتاب الجديد
+const bookFormSchema = z.object({
+  title: z.string().min(2, { message: "يجب أن يكون عنوان الكتاب أكثر من حرفين" }),
+  author: z.string().min(2, { message: "يجب إدخال اسم المؤلف" }),
+  category: z.string().min(1, { message: "يجب اختيار تصنيف" }),
+  publishYear: z.string().regex(/^\d{4}$/, { message: "يجب إدخال سنة صحيحة (4 أرقام)" }),
+  cover: z.string().url({ message: "يجب إدخال رابط صورة صالح" }),
+});
+
+type BookFormValues = z.infer<typeof bookFormSchema>;
 
 const Books = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [books, setBooks] = useState(initialBooks);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { toast } = useToast();
   
   const categories = Array.from(new Set(books.map(book => book.category)));
   
+  // إعداد نموذج إضافة الكتاب
+  const form = useForm<BookFormValues>({
+    resolver: zodResolver(bookFormSchema),
+    defaultValues: {
+      title: "",
+      author: "",
+      category: "",
+      publishYear: "",
+      cover: "https://i.imgur.com/placeholder.jpg",
+    },
+  });
+
   const filteredBooks = books.filter(book => {
     const matchesSearch = 
       book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -38,6 +85,35 @@ const Books = () => {
     return matchesSearch && matchesCategory;
   });
 
+  // وظيفة إضافة كتاب جديد
+  const onSubmit = (data: BookFormValues) => {
+    const newBook = {
+      id: books.length + 1,
+      title: data.title,
+      author: data.author,
+      category: data.category,
+      publishYear: data.publishYear,
+      cover: data.cover,
+      available: true,
+      description: "",
+      isbn: `97897${Math.floor(Math.random() * 10000000)}`,
+      pages: Math.floor(Math.random() * 500) + 100,
+      language: "العربية",
+      publisher: "",
+      ratings: 0,
+      reviewCount: 0
+    };
+
+    setBooks([...books, newBook]);
+    setIsDialogOpen(false);
+    form.reset();
+    
+    toast({
+      title: "تمت إضافة الكتاب بنجاح",
+      description: `تمت إضافة "${data.title}" إلى المكتبة`,
+    });
+  };
+
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -47,9 +123,119 @@ const Books = () => {
             <p className="text-gray-500 mt-1">استعرض وابحث عن الكتب المتاحة في المكتبة</p>
           </div>
           
-          <Button className="bg-gold hover:bg-gold-dark text-navy-dark">
-            <Plus className="mr-2 h-4 w-4" /> إضافة كتاب جديد
-          </Button>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-gold hover:bg-gold-dark text-navy-dark">
+                <Plus className="mr-2 h-4 w-4" /> إضافة كتاب جديد
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]" dir="rtl">
+              <DialogHeader>
+                <DialogTitle>إضافة كتاب جديد</DialogTitle>
+                <DialogDescription>
+                  أدخل معلومات الكتاب الذي تريد إضافته إلى المكتبة
+                </DialogDescription>
+              </DialogHeader>
+              
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
+                  <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>عنوان الكتاب</FormLabel>
+                        <FormControl>
+                          <Input placeholder="أدخل عنوان الكتاب" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="author"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>المؤلف</FormLabel>
+                        <FormControl>
+                          <Input placeholder="اسم المؤلف" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="category"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>التصنيف</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="اختر تصنيف" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectGroup>
+                              {categories.map(category => (
+                                <SelectItem key={category} value={category}>{category}</SelectItem>
+                              ))}
+                              <SelectItem value="تصنيف جديد">تصنيف جديد</SelectItem>
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="publishYear"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>سنة النشر</FormLabel>
+                        <FormControl>
+                          <Input placeholder="سنة النشر" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="cover"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>رابط صورة الغلاف</FormLabel>
+                        <FormControl>
+                          <Input placeholder="أدخل رابط URL للصورة" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <DialogFooter className="mt-6">
+                    <Button 
+                      type="submit" 
+                      className="bg-gold hover:bg-gold-dark text-navy-dark"
+                    >
+                      إضافة الكتاب
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-center">
