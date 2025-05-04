@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Card, 
   CardContent, 
@@ -35,7 +35,7 @@ import {
   FormMessage 
 } from "@/components/ui/form";
 import { Link } from 'react-router-dom';
-import { Search, BookOpen, Plus } from 'lucide-react';
+import { Search, BookOpen, Plus, FilterX } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { books as initialBooks } from '@/data/mockData';
 import { useToast } from "@/hooks/use-toast";
@@ -59,6 +59,7 @@ const Books = () => {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [books, setBooks] = useState(initialBooks);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   const { toast } = useToast();
   
   const categories = Array.from(new Set(books.map(book => book.category)));
@@ -75,6 +76,7 @@ const Books = () => {
     },
   });
 
+  // تطبيق الفلاتر على الكتب
   const filteredBooks = books.filter(book => {
     const matchesSearch = 
       book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -113,6 +115,26 @@ const Books = () => {
       description: `تمت إضافة "${data.title}" إلى المكتبة`,
     });
   };
+
+  // وظيفة البحث عند الضغط على زر البحث أو Enter
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setHasSearched(true);
+  };
+
+  // وظيفة إعادة ضبط الفلاتر
+  const resetFilters = () => {
+    setSearchTerm('');
+    setCategoryFilter('all');
+    setHasSearched(false);
+  };
+
+  // تأثير لتتبع تغييرات البحث
+  useEffect(() => {
+    if (hasSearched && searchTerm === '') {
+      setHasSearched(false);
+    }
+  }, [searchTerm]);
 
   return (
     <MainLayout>
@@ -238,31 +260,56 @@ const Books = () => {
           </Dialog>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-center">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-            <Input
-              placeholder="ابحث عن كتاب..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 pr-4 w-full"
-              dir="rtl"
-            />
-          </div>
-          
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="جميع التصنيفات" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                <SelectItem value="all">جميع التصنيفات</SelectItem>
-                {categories.map(category => (
-                  <SelectItem key={category} value={category}>{category}</SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
+        <div className="bg-white/60 backdrop-blur rounded-lg p-4 shadow-sm border">
+          <form onSubmit={handleSearch} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-center">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                <Input
+                  placeholder="ابحث عن كتاب بالعنوان أو اسم المؤلف..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9 pr-4 w-full"
+                  dir="rtl"
+                />
+              </div>
+              
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="جميع التصنيفات" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="all">جميع التصنيفات</SelectItem>
+                    {categories.map(category => (
+                      <SelectItem key={category} value={category}>{category}</SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex justify-between">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={resetFilters}
+                className="text-gray-500 border-gray-300"
+                disabled={!searchTerm && categoryFilter === 'all'}
+              >
+                <FilterX className="mr-2 h-4 w-4" /> 
+                إعادة ضبط الفلاتر
+              </Button>
+              
+              <Button 
+                type="submit" 
+                className="bg-navy hover:bg-navy-dark"
+              >
+                <Search className="mr-2 h-4 w-4" /> 
+                بحث
+              </Button>
+            </div>
+          </form>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -326,10 +373,19 @@ const Books = () => {
         </div>
         
         {filteredBooks.length === 0 && (
-          <div className="text-center py-12">
+          <div className="text-center py-12 bg-white/60 backdrop-blur rounded-lg shadow-sm border">
             <BookOpen className="mx-auto h-12 w-12 text-gray-400" />
             <h3 className="mt-4 text-lg font-medium">لا توجد كتب متطابقة</h3>
             <p className="mt-2 text-gray-500">جرب تغيير معايير البحث أو التصنيف</p>
+            
+            <Button 
+              onClick={resetFilters} 
+              variant="outline" 
+              className="mt-4"
+            >
+              <FilterX className="mr-2 h-4 w-4" /> 
+              إعادة ضبط الفلاتر
+            </Button>
           </div>
         )}
       </div>
