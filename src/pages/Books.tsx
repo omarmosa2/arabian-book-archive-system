@@ -24,7 +24,7 @@ import { books } from '@/data/mockData';
 
 const Books = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
   
   const categories = Array.from(new Set(books.map(book => book.category)));
   
@@ -33,7 +33,7 @@ const Books = () => {
       book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       book.author.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesCategory = categoryFilter === '' || book.category === categoryFilter;
+    const matchesCategory = categoryFilter === 'all' || book.category === categoryFilter;
     
     return matchesSearch && matchesCategory;
   });
@@ -70,7 +70,7 @@ const Books = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
-                <SelectItem value="">جميع التصنيفات</SelectItem>
+                <SelectItem value="all">جميع التصنيفات</SelectItem>
                 {categories.map(category => (
                   <SelectItem key={category} value={category}>{category}</SelectItem>
                 ))}
